@@ -1,6 +1,17 @@
 # ⚡️ Edge-Native Telemetry & Observability Hub
 
+![Real-time Telemetry Dashboard](./assets/dashboard-demo.gif)
+*(Note: Replace with an actual GIF/video of your Tremor dashboard in action)*
+
 A full-stack, real-time observability pipeline built entirely on the Cloudflare Edge network. This project acts as an ingestion and visualization engine for distributed Cloudflare Workers, achieving zero-latency logging via Service Bindings and real-time frontend updates via Durable Objects.
+
+## 🤔 The "Build vs. Buy" Decision: Why not Datadog or Sentry?
+
+In a traditional Node.js/Containerized backend, I would utilize standard APM agents (like Datadog or New Relic). However, the Edge ecosystem (V8 Isolates) introduces unique constraints that make a custom, edge-native telemetry hub highly advantageous:
+
+1. **Eliminating Public Internet Latency:** Sending telemetry to a third-party observability platform requires an outbound HTTPS request over the public internet. By building the `applogger` natively on Cloudflare, the main application passes logs via **Service Bindings**—which execute in the same underlying datacenter with near-zero millisecond network latency.
+2. **No Background Threads:** Cloudflare Workers do not have background threads to batch and dispatch logs asynchronously like traditional Node.js agents do. Our custom solution leverages `ctx.waitUntil()` and Service Bindings to immediately offload the processing to a secondary worker, preventing log-dispatching from blocking the main user response.
+3. **Cost & Egress Control:** High-volume logging to third-party SaaS platforms often leads to astronomical ingestion and egress costs. By persisting to D1 and broadcasting via Durable Objects, the data never leaves the Cloudflare network, drastically reducing egress fees.
 
 ## 🧠 Architectural Highlights
 
@@ -13,72 +24,32 @@ As a senior backend architect, I designed this system to overcome the stateless 
 
 ## 🛠 Tech Stack
 
-* **Backend:** Cloudflare Workers, Hono.js, Durable Objects, D1 (SQLite)
+* **Backend:** Cloudflare Workers, Hono.js, Durable Objects, Cloudflare D1 (SQLite)
 * **Frontend:** React 18, Vite, Tailwind CSS v3, Tremor (Data Visualization)
 * **Architecture:** Monorepo (NPM Workspaces / Isolated contexts)
 
 ## 🚀 Local Development (Monorepo Workflow)
 
-This project requires running both the edge environment and the frontend bundler simultaneously.
+This project requires running both the edge environment and the frontend bundler simultaneously to mimic the production edge environment.
 
 **1. Start the Edge Backend (Terminal 1)**
 ```bash
 cd backend
-npx wrangler d1 execute applogger-db --local --file=./schema.sql # Initialize DB
-npx wrangler dev # Starts on http://localhost:8787
+npx wrangler d1 execute applogger-db --local --file=./schema.sql # Initialize DB Schema
+npx wrangler dev # Starts the API and WebSocket server on http://localhost:8787
 ```
+
 **2. Start the React Frontend (Terminal 2)**
-```
+```bash
 cd frontend
-npm run dev # Starts on http://localhost:5173
+npm run dev # Starts the Vite HMR server on http://localhost:5173
 ```
 
----
+## 📈 Simulating Traffic
 
-### Step 2: The VitePress Portfolio Page Update
-
-On your main VitePress portfolio site, you should create a new section (or a dedicated page) for this project. Since VitePress supports Mermaid diagrams (which we set up in your previous portfolio configuration), we can visually prove how the `applogger` integrates with your main API.
-
-Add this Markdown to your VitePress portfolio:
-
-````markdown
-# Project 2: Real-Time Edge Observability Pipeline
-
-Building highly performant Edge APIs is only half the battle; observing them in real-time without introducing latency is the mark of a mature architecture. 
-
-I engineered a custom Telemetry Dashboard (`applogger`) that runs natively on the Cloudflare Edge alongside my main application. 
-
-::: info View the Source Code
-[🔗 View the AppLogger Repository on GitHub](https://github.com/yourusername/applogger)
-:::
-
-## The System Architecture
-
-To prevent monitoring overhead from slowing down user requests, the Main API pushes logs to the AppLogger via **Service Bindings** (V8 isolate-to-isolate communication with zero network latency). The AppLogger utilizes `ctx.waitUntil()` to non-blockingly save logs to D1, while simultaneously multicasting to a **Durable Object** that pushes updates to the React Dashboard via WebSockets.
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant MainAPI as Main API (Worker)
-    participant AppLogger as AppLogger API (Hono)
-    participant D1 as D1 Database
-    participant DO as TelemetryRoom (Durable Object)
-    participant Dashboard as React Dashboard (Tremor)
-
-    Dashboard->>DO: 1. Connect via WebSocket
-    User->>MainAPI: 2. Trigger Business Logic
-    MainAPI->>AppLogger: 3. Service Binding: POST /api/ingest
-    
-    par Non-blocking Execution
-        AppLogger-->>MainAPI: 4a. Immediate HTTP 202 Response
-        AppLogger->>D1: 4b. ctx.waitUntil(Insert Log)
-        AppLogger->>DO: 4c. ctx.waitUntil(POST /broadcast)
-    end
-    
-    DO->>Dashboard: 5. Broadcast new log via WebSocket
-    Dashboard-->>Dashboard: 6. Area Chart updates instantly
+To test the real-time WebSocket broadcasting, you can send POST requests directly to the ingestion API while the dashboard is open:
+```bash
+curl -X POST http://localhost:8787/api/ingest \
+     -H "Content-Type: application/json" \
+     -d '{"level":"error","message":"Database connection timeout"}'
 ```
-
-## Modes of Operation
-* **Real-time Mode**: Establishes a persistent WebSocket connection to the Durable Object. Implements Strict-Mode-safe connection handling and ring buffers to prevent memory leaks in the browser.
-* **Per-Minute Polling**: A fallback REST mechanism that queries historical D1 data for low-bandwidth environments.
