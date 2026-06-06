@@ -1,7 +1,6 @@
 # ⚡️ Edge-Native Telemetry & Observability Hub
 
 ![Real-time Telemetry Dashboard](./assets/edge_telemetry.gif)
-*(Note: Replace with an actual GIF/video of your Tremor dashboard in action)*
 
 A full-stack, real-time observability pipeline built entirely on the Cloudflare Edge network. This project acts as an ingestion and visualization engine for distributed Cloudflare Workers, achieving zero-latency logging via Service Bindings and real-time frontend updates via Durable Objects.
 

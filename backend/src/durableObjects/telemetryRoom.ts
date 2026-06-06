@@ -20,7 +20,8 @@ export class TelemetryRoom extends DurableObject<Env> {
 
       this.ctx.acceptWebSocket(server);
 
-      this.startMockDataStream();
+      // Optionally start a mock data stream for testing
+      //this.startMockDataStream();
 
       return new Response(null, {
         status: 101,
