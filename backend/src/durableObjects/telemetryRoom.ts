@@ -53,7 +53,10 @@ export class TelemetryRoom extends DurableObject<Env> {
   private startMockDataStream() {
     if (this.mockInterval) return;
 
-    console.log("Starting Mock Data Stream...");
+    const getMinuteString = () => {
+      const d = new Date();
+      return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
+    };
 
     this.mockInterval = setInterval(() => {
       if (this.ctx.getWebSockets().length === 0) {
@@ -62,26 +65,19 @@ export class TelemetryRoom extends DurableObject<Env> {
         return;
       }
 
-      const levels: ('info' | 'warn' | 'error')[] = ['info', 'info', 'info', 'warn', 'error'];
-      const randomLevel = levels[Math.floor(Math.random() * levels.length)];
-      
-      const messages = {
-        info: ['User authenticated successfully', 'Cache hit on route /users', 'Payment processed'],
-        warn: ['High CPU usage detected', 'Rate limit threshold approaching'],
-        error: ['Database connection timeout', 'Failed to reach external payment API']
-      };
-      
-      const randomMsgList = messages[randomLevel];
-      const randomMsg = randomMsgList[Math.floor(Math.random() * randomMsgList.length)];
+      const actions = ['CREATE_ORDER', 'PROCESS_PAYMENT', 'SEND_EMAIL', 'USER_LOGIN'];
+      const isSuccess = Math.random() > 0.15 ? 'Y' : 'N'; 
 
       const dummyPayload = {
-        level: randomLevel,
-        message: `[MOCK] ${randomMsg}`,
-        timestamp: Date.now(),
+        minute: getMinuteString(),
+        action: actions[Math.floor(Math.random() * actions.length)],
+        success: isSuccess,
+        duration: Math.floor(Math.random() * 500) + 50,
+        resultCode: isSuccess === 'Y' ? '200' : '500',
       };
 
       this.broadcast(JSON.stringify(dummyPayload));
-    }, 2000);
+    }, 1000);
   }
 
   async webSocketClose(ws: WebSocket, code: number, reason: string, wasClean: boolean) {

@@ -44,14 +44,7 @@ app.get('/api/ws', async (c) => {
 
 
 app.get('/api/history', async (c) => {
-  const results = [
-    { id: 1, level: 'info', message: 'System started', timestamp: Date.now() - 60000 },
-    { id: 2, level: 'error', message: 'An error occurred', timestamp: Date.now() - 30000 },
-    { id: 3, level: 'info', message: 'User logged in', timestamp: Date.now() - 10000 },
-    { id: 4, level: 'warn', message: 'Low disk space', timestamp: Date.now() - 5000 }
-  ];
-
-  return c.json({ success: true, data: results });
+  return c.json({ success: true, data: [] });
 });
 
 

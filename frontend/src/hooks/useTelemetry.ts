@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import type { TelemetryLog, LogMode } from '../types';
 
-const API_BASE = 'http://localhost:8788/api'; 
-const WS_BASE = 'ws://localhost:8788/api/ws';
+const BE_HOST = 'localhost';
+const BE_PORT = '8788';
+const API_BASE = `http://${BE_HOST}:${BE_PORT}/api`;
+const WS_BASE = `ws://${BE_HOST}:${BE_PORT}/api/ws`;
 
 export function useTelemetry(initialMode: LogMode = 'realtime') {
   const [mode, setMode] = useState<LogMode>(initialMode);
@@ -34,7 +36,7 @@ export function useTelemetry(initialMode: LogMode = 'realtime') {
       ws.onclose = () => setIsConnected(false);
       ws.onmessage = (event) => {
         const newLog: TelemetryLog = JSON.parse(event.data);
-        setLogs((prev) => [...prev, newLog].slice(-100));
+        setLogs((prev) => [...prev, newLog].slice(-2000));
       };
 
       return () => {
