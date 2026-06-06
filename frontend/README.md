@@ -1,73 +1,36 @@
-# React + TypeScript + Vite
+# AppLogger - React Telemetry Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This workspace contains the frontend visualization layer for the AppLogger system. It is a React Single Page Application (SPA) compiled via Vite and styled with Tailwind CSS and Tremor.
 
-Currently, two official plugins are available:
+## 🧠 Core Logic: `useTelemetry` Hook
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The brain of the frontend is located in `src/hooks/useTelemetry.ts`. It manages the complex lifecycle of edge-driven data:
+* **Strict-Mode Safe WebSockets:** Handles React 18's rapid mount/unmount cycle during development to prevent orphaned `CONNECTING` sockets.
+* **Memory Protection:** Implements a rolling ring-buffer (`slice(-100)`) on incoming real-time logs to prevent the browser tab from crashing during high-volume traffic.
+* **Graceful Degradation:** Allows toggling between real-time WebSocket streams and legacy REST polling (`/api/history`).
 
-## React Compiler
+## 🛠 Tech Stack
+* React 18
+* Vite (Bundler)
+* Tailwind CSS v3 (Styling)
+* Tremor (Data Visualization & UI Components)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 💻 Local Development
 
-## Expanding the ESLint configuration
+This frontend expects the Hono backend to be running simultaneously on port `8787` (or `8788`).
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```bash
+# 1. Install dependencies
+npm install
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# 2. Start the Vite hot-reloading server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 📦 Build Process
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+When deploying to Cloudflare, the backend `wrangler.jsonc` is configured to serve this application's `dist/` folder via Cloudflare Worker Assets.
+```bash
+# Compiles the React application into static HTML/JS/CSS inside /dist
+npm run build
 ```
