@@ -1,0 +1,50 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "applogger",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-05",
+  // 1. FRONTEND ASSETS
+  // This tells Cloudflare to serve your compiled Vite React app.
+  // Any route not caught by Hono will fall back to serving these files.
+  "assets": {
+    "directory": "../frontend/dist",
+    "binding": "ASSETS"
+  },
+
+  // 2. D1 DATABASE BINDING
+  // This binds the D1 SQLite database to `c.env.DB` in Hono.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "applogger-db",
+      // You will generate this ID by running: npx wrangler d1 create applogger-db
+      "database_id": "YOUR_D1_DATABASE_ID_HERE" 
+    }
+  ],
+
+  // 3. DURABLE OBJECTS BINDING
+  // This binds your TelemetryRoom class to `c.env.TELEMETRY_ROOM`
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "TELEMETRY_ROOM",
+        "class_name": "TelemetryRoom"
+      }
+    ]
+  },
+
+  // 4. DURABLE OBJECTS MIGRATION
+  // Cloudflare requires you to declare when you add or change Durable Object classes.
+  "migrations": [
+    {
+      "tag": "v1", // Initial migration
+      "new_classes": ["TelemetryRoom"]
+    }
+  ],
+
+  // 5. OBSERVABILITY
+  // Ensure you can actually see the logs of your logger worker in the Cloudflare dashboard.
+  "observability": {
+    "enabled": true
+  }  
+}
